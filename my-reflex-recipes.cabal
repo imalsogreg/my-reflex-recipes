@@ -21,6 +21,7 @@ executable my-reflex-recipes
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.8 && <4.9,
+                       containers,
                        data-default >= 0.5 && < 0.6,
                        file-embed >= 0.0.8 && < 0.1,
                        string-quote >= 0.0.1 && < 0.1,
