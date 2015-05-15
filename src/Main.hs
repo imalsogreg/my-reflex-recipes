@@ -9,11 +9,23 @@ module Main where
 import           Reflex.Dom
 import qualified Data.Map as Map
 import           Data.Monoid ((<>))
+--import Text.Highlighting.Kate
+--import Text.Blaze.Html.Renderer.String (renderHtml)
+--import Text.Blaze.Html (toHtml)
+--import Text.Blaze.Html5 as H
+--import Text.Blaze.Html5.Attributes as A hiding (value)
+
 import           Data.Time
 import           Data.Time.Clock
 import           Data.Default
 import           Data.FileEmbed
 import           Data.String.Quote
+
+--highlightHaskell :: String -> String
+--highlightHaskell code = renderHtml $ toHtml
+--                       $ formatHtmlBlock defaultFormatOpts
+--                       $ highlightAs "haskell" code
+
 
 
 main :: IO ()

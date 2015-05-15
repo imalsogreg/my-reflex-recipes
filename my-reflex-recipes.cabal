@@ -21,9 +21,11 @@ executable my-reflex-recipes
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.8 && <4.9,
+                       blaze-html,
                        containers,
                        data-default >= 0.5 && < 0.6,
                        file-embed >= 0.0.8 && < 0.1,
+                       highlighting-kate,
                        string-quote >= 0.0.1 && < 0.1,
                        time >= 1.5 && < 1.6,
                        reflex >= 0.2 && < 0.3,
