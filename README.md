@@ -1,5 +1,5 @@
 # my-reflex-recipes
-A collection of worked [reflex-dom](https://github.com/ryantrinkle/reflex-dom) exercises. See them running [here](http://web.mit.edu/greghale/Public/my-reflex-examples/index.html).
+A collection of worked [reflex-dom](https://github.com/ryantrinkle/reflex-dom) exercises. See them running [here](http://web.mit.edu/greghale/Public/my-reflex-recipes).
 
 ## Installation
 Building the dependencies is still tricky.
