@@ -2,7 +2,7 @@
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE OverloadedStrings #-}
-
+{-# LANGUAGE TypeFamilies      #-}
 
 module Main where
 
@@ -20,6 +20,7 @@ import           Data.Time.Clock
 import           Data.Default
 import           Data.FileEmbed
 import           Data.String.Quote
+import           Safe (readMay)
 import           System.Random
 
 --highlightHaskell :: String -> String
@@ -43,6 +44,8 @@ main = do
         countClicksCode countClicks
       demoWidget "Display poisson event times"
         poissonEventDemoCode (poissonEventDemo rnd tStart)
+      demoWidget "Inhomogeneous poisson process"
+        inhomPoissonDemoCode (inhomPoissonDemo rnd tStart)
 
 demoWidget :: MonadWidget t m => String -> String -> m a -> m a
 demoWidget descr src w = do
@@ -188,4 +191,29 @@ poissonEventDemo gen t0 = do
   ticks <- fmap (show . _tickInfo_lastUTC) <$> poissonLossy gen 10 t0
   label <- holdDyn "No ticks yet" ticks
   dynText label
+|]
+
+inhomPoissonDemo :: (RandomGen g, MonadWidget t m) => g -> UTCTime -> m ()
+inhomPoissonDemo rnd t0 =  do
+  rateBox  <- textInput def
+  rate     <- mapDyn (maybe 1 id . readMay) (value rateBox)
+  ticks    <- inhomogeneousPoisson rnd (current rate) 10 t0
+  display rate
+  el "br" (return ())
+  let tickStrs = fmap (show . _tickInfo_lastUTC) ticks
+  tickStr  <- holdDyn "No ticks yet" tickStrs
+  display tickStr
+
+inhomPoissonDemoCode :: String
+inhomPoissonDemoCode = [s|
+inhomPoissonDemo :: (RandomGen g, MonadWidget t m) => g -> UTCTime -> m ()
+inhomPoissonDemo rnd t0 =  do
+  rateBox  <- textInput def
+  rate     <- mapDyn (maybe 1 id . readMay) (value rateBox)
+  ticks    <- inhomogeneousPoisson rnd (current rate) 10 t0
+  display rate
+  el "br" (return ())
+  let tickStrs = fmap (show . _tickInfo_lastUTC) ticks
+  tickStr  <- holdDyn "No ticks yet" tickStrs
+  display tickStr
 |]

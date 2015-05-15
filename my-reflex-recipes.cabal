@@ -26,6 +26,7 @@ executable my-reflex-recipes
                        data-default >= 0.5 && < 0.6,
                        file-embed >= 0.0.8 && < 0.1,
                        random >= 1.0 && < 1.1,
+                       safe,
                        string-quote >= 0.0.1 && < 0.1,
                        time >= 1.5 && < 1.6,
                        reflex >= 0.2 && < 0.3,
