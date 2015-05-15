@@ -78,43 +78,83 @@ basicTimer t0 = do
 countClicks :: MonadWidget t m => m ()
 countClicks = mdo
 
-  let initialCounters = Map.fromList [(i,0 :: Int) | i <- [0..2 :: Int]]
-      addCounter  cs  = Map.insert (length cs) 0 cs
+  let initialCounters = Map.fromList [(i,()) | i <- [0..2 :: Int]]
+      addCounter  cs  = Map.insert (length cs) () cs
       dropCounter cs  = case Map.maxView cs of
         Nothing      -> cs
         Just (_,cs') -> cs'
-      incrAtKey cs k  = case Map.lookup k of
-        Nothing -> cs
-        Just v  -> Map.insert k (succ v) cs
 
   allBins <- foldDyn ($)
-             initialCounters (leftmost $ [dropBinButton, addBinButton] ++ boxClicks)
+             initialCounters
+             (leftmost $ [dropBinButton, addBinButton])
 
   elClass "div" "allCounts" $ do
 
-    boxEls <- listWithKey allBins $ \k oneBin -> do
-      boxEl <- forDyn oneBin $ \b ->
-        Map.fromList [("class","countBin")
-                     ,("style","background-color:blue; width: 10px; float:left;")
-                     ,("height", show (10 + b) <> "px")
-                     ]
-      fullBoxEl <- elDynAttr' "div" boxAttrs $ do
-          display oneBin
-      return fullBoxEl
+    listWithKey allBins $ \k oneBin -> mdo
 
-    let boxClicked = (fmap (\() -> incrAtKey k) . _el_clicked) <$> boxAttrs
-    return boxClicked
+      nClicks <- foldDyn (\() -> succ) (0 :: Int) (_el_clicked boxEl)
+
+      attrsDyn <- forDyn nClicks $ \b ->
+        Map.fromList
+        [("class","countBin noselect")
+        ,("style","height:" ++ show (30+b*3) ++ "px;" ++
+                  "background-color: hsl(" ++
+                  show (b*5) ++ ",50%,50%);")]
+
+      (boxEl,_) <- elDynAttr' "div" attrsDyn $ do
+        display nClicks
+
+      return ()
 
   el "br" (return ())
 
   -- Turn links' () click events into functions to apply to the bin map
   dropBinButton <- (fmap (\() -> dropCounter) . _link_clicked) <$>
-                   link "Remove Bin"
+                   linkClass "Remove Bin" "reflexLink noselect"
   addBinButton  <- (fmap (\() -> addCounter)  . _link_clicked) <$>
-                   link "Add Bin"
-
+                   linkClass "Add Bin" "reflexLink noselect"
   return ()
 
 
 countClicksCode :: String
-countClicksCode = "In progress"
+countClicksCode = [s|
+countClicks :: MonadWidget t m => m ()
+countClicks = mdo
+
+  let initialCounters = Map.fromList [(i,()) | i <- [0..2 :: Int]]
+      addCounter  cs  = Map.insert (length cs) () cs
+      dropCounter cs  = case Map.maxView cs of
+        Nothing      -> cs
+        Just (_,cs') -> cs'
+
+  allBins <- foldDyn ($)
+             initialCounters
+             (leftmost $ [dropBinButton, addBinButton])
+
+  elClass "div" "allCounts" $ do
+
+    listWithKey allBins $ \k oneBin -> mdo
+
+      nClicks <- foldDyn (\() -> succ) (0 :: Int) (_el_clicked boxEl)
+
+      attrsDyn <- forDyn nClicks $ \b ->
+        Map.fromList
+        [("class","countBin noselect")
+        ,("style","height:" ++ show (30+b*3) ++ "px;" ++
+                  "background-color: hsl("++
+                  show (b*5) ++ ",50%,50%);")]
+
+      (boxEl,_) <- elDynAttr' "div" attrsDyn $ do
+        display nClicks
+
+      return ()
+
+  el "br" (return ())
+
+  -- Turn links' () click events into functions to apply to the bin map
+  dropBinButton <- (fmap (\() -> dropCounter) . _link_clicked) <$>
+                   linkClass "Remove Bin" "reflexLink noselect"
+  addBinButton  <- (fmap (\() -> addCounter)  . _link_clicked) <$>
+                   linkClass "Add Bin" "reflexLink noselect"
+  return ()
+|]
