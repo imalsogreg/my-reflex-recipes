@@ -20,6 +20,7 @@ import           Data.Time.Clock
 import           Data.Default
 import           Data.FileEmbed
 import           Data.String.Quote
+import           System.Random
 
 --highlightHaskell :: String -> String
 --highlightHaskell code = renderHtml $ toHtml
@@ -31,6 +32,7 @@ import           Data.String.Quote
 main :: IO ()
 main = do
   tStart <- getCurrentTime
+  rnd    <- getStdGen
   mainWidgetWithCss $(embedFile "css/default.css") $ do
     elClass "div" "content" $ do
       demoWidget "Echo textbox contents to a div below"
@@ -39,6 +41,8 @@ main = do
         basicTimerCode (basicTimer tStart)
       demoWidget "Count clicks on divs"
         countClicksCode countClicks
+      demoWidget "Display poisson event times"
+        poissonEventDemoCode (poissonEventDemo rnd tStart)
 
 demoWidget :: MonadWidget t m => String -> String -> m a -> m a
 demoWidget descr src w = do
@@ -169,4 +173,19 @@ countClicks = mdo
   addBinButton  <- (fmap (\() -> addCounter)  . _link_clicked) <$>
                    linkClass "Add Bin" "reflexLink noselect"
   return ()
+|]
+
+poissonEventDemo :: (RandomGen g, MonadWidget t m) => g -> UTCTime -> m ()
+poissonEventDemo gen t0 = do
+  ticks <- fmap (show . _tickInfo_lastUTC) <$> poissonLossy gen 10 t0
+  label <- holdDyn "No ticks yet" ticks
+  dynText label
+
+poissonEventDemoCode :: String
+poissonEventDemoCode = [s|
+poissonEventDemo :: (RandomGen g, MonadWidget t m) => g -> UTCTime -> m ()
+poissonEventDemo gen t0 = do
+  ticks <- fmap (show . _tickInfo_lastUTC) <$> poissonLossy gen 10 t0
+  label <- holdDyn "No ticks yet" ticks
+  dynText label
 |]
