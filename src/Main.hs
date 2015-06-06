@@ -46,6 +46,8 @@ main = do
         poissonEventDemoCode (poissonEventDemo rnd tStart)
       demoWidget "Inhomogeneous poisson process"
         inhomPoissonDemoCode (inhomPoissonDemo rnd tStart)
+      demoWidget "Bouncing Ball"
+        "in progress" (demoBounce tStart)
 
 demoWidget :: MonadWidget t m => String -> String -> m a -> m a
 demoWidget descr src w = do
@@ -188,7 +190,7 @@ poissonEventDemoCode :: String
 poissonEventDemoCode = [s|
 poissonEventDemo :: (RandomGen g, MonadWidget t m) => g -> UTCTime -> m ()
 poissonEventDemo gen t0 = do
-  ticks <- fmap (show . _tickInfo_lastUTC) <$> poissonLossy gen 10 t0
+  ticks <- fmap (show) <$> poissonLossy gen 10 t0
   label <- holdDyn "No ticks yet" ticks
   dynText label
 |]
@@ -200,7 +202,7 @@ inhomPoissonDemo rnd t0 =  do
   ticks    <- inhomogeneousPoisson rnd (current rate) 10 t0
   display rate
   el "br" (return ())
-  let tickStrs = fmap (show . _tickInfo_lastUTC) ticks
+  let tickStrs = fmap (show) ticks
   tickStr  <- holdDyn "No ticks yet" tickStrs
   display tickStr
 
@@ -213,7 +215,10 @@ inhomPoissonDemo rnd t0 =  do
   ticks    <- inhomogeneousPoisson rnd (current rate) 10 t0
   display rate
   el "br" (return ())
-  let tickStrs = fmap (show . _tickInfo_lastUTC) ticks
+  let tickStrs = fmap (show) ticks
   tickStr  <- holdDyn "No ticks yet" tickStrs
   display tickStr
 |]
+
+demoBounce :: MonadWidget t m => UTCTime -> m ()
+demoBounce = text "Is it possible?" & return
