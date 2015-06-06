@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes        #-}
 {-# LANGUAGE RecursiveDo       #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE QuasiQuotes       #-}
@@ -6,6 +7,8 @@
 
 module Main where
 
+import           Control.Concurrent
+import           Control.Monad (liftM)
 import           Reflex.Dom
 import qualified Data.Map as Map
 import           Data.Monoid ((<>))
@@ -14,7 +17,7 @@ import           Data.Monoid ((<>))
 --import Text.Blaze.Html (toHtml)
 --import Text.Blaze.Html5 as H
 --import Text.Blaze.Html5.Attributes as A hiding (value)
-
+import           Codec.Picture
 import           Data.Time
 import           Data.Time.Clock
 import           Data.Default
@@ -22,18 +25,43 @@ import           Data.FileEmbed
 import           Data.String.Quote
 import           Safe (readMay)
 import           System.Random
+import           GHCJS.DOM
+import           GHCJS.DOM.Document
+import           GHCJS.DOM.Element
+import           GHCJS.DOM.Document
+import           GHCJS.DOM.HTMLElement
+import           GHCJS.DOM.HTMLDocument
 
 --highlightHaskell :: String -> String
 --highlightHaskell code = renderHtml $ toHtml
 --                       $ formatHtmlBlock defaultFormatOpts
 --                       $ highlightAs "haskell" code
 
+------------------------------------------------------------------------------
+waitUntilJust :: IO (Maybe a) -> IO a
+waitUntilJust a = do
+    mx <- a
+    case mx of
+      Just x -> return x
+      Nothing -> do
+        threadDelay 10000
+        waitUntilJust a
 
 
 main :: IO ()
 main = do
   tStart <- getCurrentTime
   rnd    <- getStdGen
+  runWebGUI $ \webView -> do
+    doc <- waitUntilJust $ liftM (fmap castToHTMLDocument) $
+           webViewGetDomDocument webView
+    let btag = "reflex-area"
+    root <- waitUntilJust $ liftM (fmap castToHTMLElement) $
+            documentGetElementById doc btag
+    attachWidget root webView runApp
+
+runApp :: (forall t m. MonadWidget t m, RandomGen g) => UTCTime -> g -> m ()
+runApp tStart rnd = do
   mainWidgetWithCss $(embedFile "css/default.css") $ do
     elClass "div" "content" $ do
       demoWidget "Echo textbox contents to a div below"
@@ -217,3 +245,13 @@ inhomPoissonDemo rnd t0 =  do
   tickStr  <- holdDyn "No ticks yet" tickStrs
   display tickStr
 |]
+
+whackAMole :: (RandomGen g, MonadWidget t m) => g -> UTCTime -> m ()
+whackAMole rnd t0 = mdo
+
+  undefined
+
+holeWidget :: (RandomGen g, MonadWidget t m) => g -> UTCTime ->  Dynamic t Double -> m (Dynamic t Int)
+holeWidget rnd rate t0 = mdo
+
+  undefined
