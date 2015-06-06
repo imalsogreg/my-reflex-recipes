@@ -25,11 +25,14 @@ executable my-reflex-recipes
                        containers,
                        data-default >= 0.5 && < 0.6,
                        file-embed >= 0.0.8 && < 0.1,
+                       mtl,
                        random >= 1.0 && < 1.1,
                        safe,
                        string-quote >= 0.0.1 && < 0.1,
                        time >= 1.5 && < 1.6,
+                       transformers,
                        reflex >= 0.2 && < 0.3,
-                       reflex-dom >= 0.1 && < 0.2
+                       reflex-dom >= 0.1 && < 0.2,
+                       ghcjs-dom
   hs-source-dirs:      src
   default-language:    Haskell2010
