@@ -251,8 +251,18 @@ inhomPoissonDemo rnd t0 =  do
 demoBounce :: MonadWidget t m => UTCTime -> m ()
 demoBounce = text "Is it possible?" & return
 
+nRnd :: RandomGen g => Int -> g -> [g]
+nRnd 0 g = []
+nRnd 1 g = [g]
+nRnd n g = let (g',g'') = split g in g' : nRnd (n-1) g''
+
 whackAMole :: (RandomGen g, MonadWidget t m) => g -> UTCTime -> m ()
 whackAMole rnd t0 = mdo
+
+  let rands = nRnd 9 g
+  let moleRndGens = Map.fromList ()
+  moleEvents <- listViewWithKey (constDyn moleMap) (\k dynV -> moleWidget )
+
   let (r,r') = split rnd
   let (r'',r''') = split r'
   moleWidget r t0 (constDyn 0.5)
@@ -273,13 +283,13 @@ moleWidget :: (RandomGen g, MonadWidget t m)
            -> m (Event t MoleState)
 moleWidget rnd t0 popupRate = mdo
 
-  --picAttrs    <- forDyn moleState $ \s -> mappend (pSrc s) ["class" =: "mole-pic"]
+  picAttrs    <- forDyn moleState $ \s -> (pSrc s)
   let pSrc s  = case s of
                  MoleUp      -> "src" =: "MoleUp.png"
                  MoleDown    -> "src" =: "MoleDown.png"
                  MoleWhacked -> "src" =: "MoleWhacked.png"
-  --molePic     <- elDynAttr "img" picAttrs
-  molePic     <- forDyn moleState show >>= elDynHtml' "div"
+  molePic     <- fst <$> elDynAttr' "img" picAttrs (return ())
+  --molePic     <- forDyn moleState show >>= elDynHtml' "div"
   let (r,r')  =  split rnd
 
   popupTimes  <- inhomogeneousPoisson r (current popupRate) 5 t0
