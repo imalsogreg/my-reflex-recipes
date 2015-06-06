@@ -254,9 +254,14 @@ demoBounce = text "Is it possible?" & return
 whackAMole :: (RandomGen g, MonadWidget t m) => g -> UTCTime -> m ()
 whackAMole rnd t0 = mdo
   let (r,r') = split rnd
+  let (r'',r''') = split r'
   moleWidget r t0 (constDyn 0.5)
   el "br" (return ())
-  moleWidget r t0 (constDyn 0.2)
+  moleWidget r' t0 (constDyn 0.2)
+  el "br" (return ())
+  moleWidget r'' t0 (constDyn 0.5)
+  el "br" (return ())
+  moleWidget r''' t0 (constDyn 0.1)
   return ()
 
 -- moleWidget handles one active mole, triggering internal pop-up events and returning
