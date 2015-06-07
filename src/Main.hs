@@ -1,4 +1,5 @@
 {-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RecursiveDo       #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE QuasiQuotes       #-}
@@ -8,7 +9,7 @@
 module Main where
 
 import           Control.Concurrent
-import           Control.Monad (liftM)
+import           Control.Monad (liftM, forM)
 import           Reflex.Dom
 import qualified Data.Map as Map
 import           Data.Monoid ((<>))
@@ -259,10 +260,16 @@ nRnd n g = let (g',g'') = split g in g' : nRnd (n-1) g''
 whackAMole :: (RandomGen g, MonadWidget t m) => g -> UTCTime -> m ()
 whackAMole rnd t0 = mdo
 
-  let rands = nRnd 9 g
-  let moleRndGens = Map.fromList ()
-  moleEvents <- listViewWithKey (constDyn moleMap) (\k dynV -> moleWidget )
-
+  let rands = nRnd 9 rnd
+  let moleRndGens = (zip [(0 :: Int)..] rands)
+  dynText =<< forDyn score (\s -> "Score: " ++ show s)
+  el "br" (return())
+  moleEvents <- elAttr "div" ("style" =: "background-color: #d7e0d1") $ do
+    (leftmost) <$> forM moleRndGens
+      (\(k, v) -> moleWidget v t0 (constDyn 0.2))
+  score <- foldDyn (\_ acc -> acc + (100 :: Integer)) 0 moleEvents
+  return ()
+{-
   let (r,r') = split rnd
   let (r'',r''') = split r'
   moleWidget r t0 (constDyn 0.5)
@@ -273,7 +280,7 @@ whackAMole rnd t0 = mdo
   el "br" (return ())
   moleWidget r''' t0 (constDyn 0.1)
   return ()
-
+-}
 -- moleWidget handles one active mole, triggering internal pop-up events and returning
 -- events that signal a successfull whack or unsuccessful appear-disappear sequences
 moleWidget :: (RandomGen g, MonadWidget t m)
@@ -283,7 +290,7 @@ moleWidget :: (RandomGen g, MonadWidget t m)
            -> m (Event t MoleState)
 moleWidget rnd t0 popupRate = mdo
 
-  picAttrs    <- forDyn moleState $ \s -> (pSrc s)
+  picAttrs    <- forDyn moleState $ \s -> ("draggable" =: "false") <> (pSrc s)
   let pSrc s  = case s of
                  MoleUp      -> "src" =: "MoleUp.png"
                  MoleDown    -> "src" =: "MoleDown.png"
