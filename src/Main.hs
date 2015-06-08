@@ -76,7 +76,7 @@ runApp tStart rnd = do
       demoWidget "Bouncing Ball"
         "in progress" (demoBounce tStart)
       demoWidget "Whack-a-Mole"
-        "in progress" (whackAMole rnd tStart)
+        whackAMoleCode (whackAMole rnd tStart)
 
 demoWidget :: MonadWidget t m => String -> String -> m a -> m a
 demoWidget descr src w = do
@@ -252,6 +252,7 @@ inhomPoissonDemo rnd t0 =  do
 demoBounce :: MonadWidget t m => UTCTime -> m ()
 demoBounce = text "Is it possible?" & return
 
+-- Get several random seeds from one
 nRnd :: RandomGen g => Int -> g -> [g]
 nRnd 0 g = []
 nRnd 1 g = [g]
@@ -260,29 +261,20 @@ nRnd n g = let (g',g'') = split g in g' : nRnd (n-1) g''
 whackAMole :: (RandomGen g, MonadWidget t m) => g -> UTCTime -> m ()
 whackAMole rnd t0 = mdo
 
-  let rands = nRnd 9 rnd
-  let moleRndGens = (zip [(0 :: Int)..] rands)
+  let rands         = nRnd 9 rnd
+      moleRndGens   = (zip [(0 :: Int)..] rands)
+      molesDivAttrs = "style" =: "background-color: #d7e0d1;max-width:500px"
   dynText =<< forDyn score (\s -> "Score: " ++ show s)
   el "br" (return())
-  moleEvents <- elAttr "div" ("style" =: "background-color: #d7e0d1") $ do
+  moleEvents <- elAttr "div" molesDivAttrs $ do
     (leftmost) <$> forM moleRndGens
       (\(k, v) -> moleWidget v t0 (constDyn 0.2))
   score <- foldDyn (\_ acc -> acc + (100 :: Integer)) 0 moleEvents
   return ()
-{-
-  let (r,r') = split rnd
-  let (r'',r''') = split r'
-  moleWidget r t0 (constDyn 0.5)
-  el "br" (return ())
-  moleWidget r' t0 (constDyn 0.2)
-  el "br" (return ())
-  moleWidget r'' t0 (constDyn 0.5)
-  el "br" (return ())
-  moleWidget r''' t0 (constDyn 0.1)
-  return ()
--}
--- moleWidget handles one active mole, triggering internal pop-up events and returning
--- events that signal a successfull whack or unsuccessful appear-disappear sequences
+
+-- moleWidget handles one active mole, triggering
+-- internal pop-up events and returning
+-- events that signal a successfull whack
 moleWidget :: (RandomGen g, MonadWidget t m)
            => g
            -> UTCTime
@@ -290,20 +282,21 @@ moleWidget :: (RandomGen g, MonadWidget t m)
            -> m (Event t MoleState)
 moleWidget rnd t0 popupRate = mdo
 
-  picAttrs    <- forDyn moleState $ \s -> ("draggable" =: "false") <> (pSrc s)
+  picAttrs    <- forDyn moleState $ \s ->
+                 ("draggable" =: "false") <> (pSrc s)
   let pSrc s  = case s of
                  MoleUp      -> "src" =: "MoleUp.png"
                  MoleDown    -> "src" =: "MoleDown.png"
                  MoleWhacked -> "src" =: "MoleWhacked.png"
   molePic     <- fst <$> elDynAttr' "img" picAttrs (return ())
-  --molePic     <- forDyn moleState show >>= elDynHtml' "div"
   let (r,r')  =  split rnd
 
   popupTimes  <- inhomogeneousPoisson r (current popupRate) 5 t0
   goDownTimes <- mapDyn (*2) popupRate >>= \goDownRate ->
                  inhomogeneousPoisson r' (current goDownRate) 10 t0
+
   let whacks  =  _el_clicked molePic
-  moleState   <- foldDyn (\e s -> updateMole e s) MoleDown
+  moleState   <- foldDyn updateMole MoleDown
                  (leftmost [fmap (const GoUp)   popupTimes
                            ,fmap (const GoDown) goDownTimes
                            ,fmap (const Whack)  whacks
@@ -322,3 +315,72 @@ data MoleState = MoleDown | MoleUp | MoleWhacked
                deriving (Eq, Show)
 
 data MoleAction = Whack | GoUp | GoDown
+
+whackAMoleCode :: String
+whackAMoleCode = [s|
+-- Get several random seeds from one
+nRnd :: RandomGen g => Int -> g -> [g]
+nRnd 0 g = []
+nRnd 1 g = [g]
+nRnd n g = let (g',g'') = split g in g' : nRnd (n-1) g''
+
+whackAMole :: (RandomGen g, MonadWidget t m) => g -> UTCTime -> m ()
+whackAMole rnd t0 = mdo
+
+  let rands         = nRnd 9 rnd
+      moleRndGens   = (zip [(0 :: Int)..] rands)
+      molesDivAttrs = "style" =: "background-color: #d7e0d1;max-width:500px"
+  dynText =<< forDyn score (\s -> "Score: " ++ show s)
+  el "br" (return())
+  moleEvents <- elAttr "div" molesDivAttrs $ do
+    (leftmost) <$> forM moleRndGens
+      (\(k, v) -> moleWidget v t0 (constDyn 0.2))
+  score <- foldDyn (\_ acc -> acc + (100 :: Integer)) 0 moleEvents
+  return ()
+
+-- moleWidget handles one active mole, triggering
+-- internal pop-up events and returning
+-- events that signal a successfull whack
+moleWidget :: (RandomGen g, MonadWidget t m)
+           => g
+           -> UTCTime
+           -> Dynamic t Double
+           -> m (Event t MoleState)
+moleWidget rnd t0 popupRate = mdo
+
+  picAttrs    <- forDyn moleState $ \s ->
+                 ("draggable" =: "false") <> (pSrc s)
+  let pSrc s  = case s of
+                 MoleUp      -> "src" =: "MoleUp.png"
+                 MoleDown    -> "src" =: "MoleDown.png"
+                 MoleWhacked -> "src" =: "MoleWhacked.png"
+  molePic     <- fst <$> elDynAttr' "img" picAttrs (return ())
+  let (r,r')  =  split rnd
+
+  popupTimes  <- inhomogeneousPoisson r (current popupRate) 5 t0
+  goDownTimes <- mapDyn (*2) popupRate >>= \goDownRate ->
+                 inhomogeneousPoisson r' (current goDownRate) 10 t0
+
+  let whacks  =  _el_clicked molePic
+  moleState   <- foldDyn updateMole MoleDown
+                 (leftmost [fmap (const GoUp)   popupTimes
+                           ,fmap (const GoDown) goDownTimes
+                           ,fmap (const Whack)  whacks
+                           ])
+  return . ffilter (== MoleWhacked) . updated $ moleState
+
+
+updateMole :: MoleAction -> MoleState -> MoleState
+updateMole GoUp   MoleDown    = MoleUp
+updateMole GoDown MoleUp      = MoleDown
+updateMole Whack  MoleUp      = MoleWhacked
+updateMole GoDown MoleWhacked = MoleDown
+updateMole _ s                 = s
+
+data MoleState = MoleDown | MoleUp | MoleWhacked
+               deriving (Eq, Show)
+
+data MoleAction = Whack | GoUp | GoDown
+
+
+|]
